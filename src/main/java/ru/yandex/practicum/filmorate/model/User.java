@@ -29,12 +29,4 @@ public class User {
     private LocalDate birthday;
 
     private Set<Integer> friends = new HashSet<>();
-
-    public void addFriend(Integer friendId) {
-        friends.add(friendId);
-    }
-
-    public void removeFriend(Integer friendId) {
-        friends.remove(friendId);
-    }
 }

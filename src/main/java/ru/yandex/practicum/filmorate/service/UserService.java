@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
@@ -18,7 +17,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserService {
     private final UserStorage userStorage;
-    private final EventService eventService;
+
+    public Collection<User> findAll() {
+        return userStorage.findAll();
+    }
+
+    public User findById(Integer id) {
+        return userStorage.findById(id)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + id + " не найден"));
+    }
 
     public User create(User user) {
         validate(user);
@@ -29,7 +36,10 @@ public class UserService {
     }
 
     public User update(User user) {
-        getUserOrThrow(user.getId());
+        if (user.getId() == null) {
+            throw new ValidationException("Id должен быть указан");
+        }
+        findById(user.getId());
         validate(user);
         setNameIfEmpty(user);
         User updated = userStorage.update(user);
@@ -37,57 +47,41 @@ public class UserService {
         return updated;
     }
 
-    public Collection<User> findAll() {
-        return userStorage.findAll();
-    }
-
-    public User findById(Integer id) {
-        return getUserOrThrow(id);
-    }
-
     public void delete(Integer id) {
-        getUserOrThrow(id);
+        findById(id);
         userStorage.delete(id);
         log.info("Удалён пользователь с id={}", id);
     }
 
     public void addFriend(Integer userId, Integer friendId) {
-        User user = getUserOrThrow(userId);
-        User friend = getUserOrThrow(friendId);
-        user.addFriend(friendId);
-        friend.addFriend(userId);
-        eventService.addEvent(userId, "FRIEND", "ADD", friendId);
-        log.info("Пользователи {} и {} теперь друзья", userId, friendId);
+        User user = findById(userId);
+        User friend = findById(friendId);
+        user.getFriends().add(friendId);
+        friend.getFriends().add(userId);
+        log.info("Пользователь {} добавил в друзья {}", userId, friendId);
     }
 
     public void removeFriend(Integer userId, Integer friendId) {
-        User user = getUserOrThrow(userId);
-        User friend = getUserOrThrow(friendId);
-        user.removeFriend(friendId);
-        friend.removeFriend(userId);
-        eventService.addEvent(userId, "FRIEND", "REMOVE", friendId);
-        log.info("Пользователи {} и {} больше не друзья", userId, friendId);
-    }
-
-    public List<Event> getFeed(Integer userId) {
-        getUserOrThrow(userId);
-        return eventService.getUserFeed(userId);
+        User user = findById(userId);
+        User friend = findById(friendId);
+        user.getFriends().remove(friendId);
+        friend.getFriends().remove(userId);
+        log.info("Пользователь {} удалил из друзей {}", userId, friendId);
     }
 
     public List<User> getFriends(Integer userId) {
-        User user = getUserOrThrow(userId);
+        User user = findById(userId);
         return user.getFriends().stream()
-                .map(this::getUserOrThrow)
+                .map(this::findById)
                 .collect(Collectors.toList());
     }
 
     public List<User> getCommonFriends(Integer userId, Integer otherId) {
-        User user = getUserOrThrow(userId);
-        User other = getUserOrThrow(otherId);
-
+        User user = findById(userId);
+        User other = findById(otherId);
         return user.getFriends().stream()
-                .filter(id -> other.getFriends().contains(id))
-                .map(this::getUserOrThrow)
+                .filter(other.getFriends()::contains)
+                .map(this::findById)
                 .collect(Collectors.toList());
     }
 
@@ -102,10 +96,5 @@ public class UserService {
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
         }
-    }
-
-    private User getUserOrThrow(Integer id) {
-        return userStorage.findById(id)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + id + " не найден"));
     }
 }

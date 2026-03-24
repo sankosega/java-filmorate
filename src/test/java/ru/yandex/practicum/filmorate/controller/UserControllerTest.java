@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.service.EventService;
 import ru.yandex.practicum.filmorate.service.UserService;
 import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
@@ -19,12 +18,15 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 class UserControllerTest {
-    private UserService userService;
+    private UserController userController;
     private Validator validator;
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(new InMemoryUserStorage(), new EventService());
+        InMemoryUserStorage userStorage = new InMemoryUserStorage();
+        UserService userService = new UserService(userStorage);
+        userController = new UserController(userService);
+
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();
     }
@@ -37,7 +39,7 @@ class UserControllerTest {
         user.setName("Test User");
         user.setBirthday(LocalDate.of(1990, 1, 1));
 
-        User created = userService.create(user);
+        User created = userController.create(user);
 
         assertNotNull(created.getId());
         assertEquals("test@example.com", created.getEmail());
@@ -87,7 +89,7 @@ class UserControllerTest {
         user.setName("Test User");
         user.setBirthday(LocalDate.of(1990, 1, 1));
 
-        assertThrows(ValidationException.class, () -> userService.create(user));
+        assertThrows(ValidationException.class, () -> userController.create(user));
     }
 
     @Test
@@ -98,7 +100,7 @@ class UserControllerTest {
         user.setName("");
         user.setBirthday(LocalDate.of(1990, 1, 1));
 
-        User created = userService.create(user);
+        User created = userController.create(user);
 
         assertEquals("testuser", created.getName());
     }
@@ -111,7 +113,7 @@ class UserControllerTest {
         user.setName(null);
         user.setBirthday(LocalDate.of(1990, 1, 1));
 
-        User created = userService.create(user);
+        User created = userController.create(user);
 
         assertEquals("testuser", created.getName());
     }
@@ -154,10 +156,10 @@ class UserControllerTest {
         user2.setName("User 2");
         user2.setBirthday(LocalDate.of(1995, 1, 1));
 
-        userService.create(user1);
-        userService.create(user2);
+        userController.create(user1);
+        userController.create(user2);
 
-        assertEquals(2, userService.findAll().size());
+        assertEquals(2, userController.findAll().size());
     }
 
     @Test
@@ -168,10 +170,10 @@ class UserControllerTest {
         user.setName("Original Name");
         user.setBirthday(LocalDate.of(1990, 1, 1));
 
-        User created = userService.create(user);
+        User created = userController.create(user);
 
         created.setName("Updated Name");
-        User updated = userService.update(created);
+        User updated = userController.update(created);
 
         assertEquals("Updated Name", updated.getName());
     }
@@ -185,6 +187,6 @@ class UserControllerTest {
         user.setName("Test User");
         user.setBirthday(LocalDate.of(1990, 1, 1));
 
-        assertThrows(NotFoundException.class, () -> userService.update(user));
+        assertThrows(NotFoundException.class, () -> userController.update(user));
     }
 }

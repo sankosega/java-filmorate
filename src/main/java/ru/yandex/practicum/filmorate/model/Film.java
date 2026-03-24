@@ -30,21 +30,13 @@ public class Film {
 
     private Mpa mpa;
 
-    private Set<Genre> genres = new LinkedHashSet<>();
+    private LinkedHashSet<Genre> genres = new LinkedHashSet<>();
 
-    private Set<Director> directors = new LinkedHashSet<>();
+    private LinkedHashSet<Director> directors = new LinkedHashSet<>();
 
     private Set<Integer> likes = new HashSet<>();
 
     public int getLikesCount() {
         return likes.size();
-    }
-
-    public void addLike(Integer userId) {
-        likes.add(userId);
-    }
-
-    public void removeLike(Integer userId) {
-        likes.remove(userId);
     }
 }

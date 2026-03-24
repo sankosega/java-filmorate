@@ -27,7 +27,7 @@ public class MpaService {
     public Mpa findById(Integer id) {
         Mpa mpa = mpaRatings.get(id);
         if (mpa == null) {
-            throw new NotFoundException("MPA с id=" + id + " не найден");
+            throw new NotFoundException("MPA рейтинг с id=" + id + " не найден");
         }
         return mpa;
     }

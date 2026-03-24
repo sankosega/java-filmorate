@@ -35,7 +35,7 @@ public class DirectorService {
     }
 
     public Director update(Director director) {
-        if (!directors.containsKey(director.getId())) {
+        if (director.getId() == null || !directors.containsKey(director.getId())) {
             throw new NotFoundException("Режиссёр с id=" + director.getId() + " не найден");
         }
         directors.put(director.getId(), director);

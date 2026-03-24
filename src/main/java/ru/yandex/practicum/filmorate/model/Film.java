@@ -6,6 +6,9 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Film.
@@ -24,4 +27,24 @@ public class Film {
 
     @Positive(message = "Продолжительность фильма должна быть положительным числом")
     private Integer duration;
+
+    private Mpa mpa;
+
+    private Set<Genre> genres = new LinkedHashSet<>();
+
+    private Set<Director> directors = new LinkedHashSet<>();
+
+    private Set<Integer> likes = new HashSet<>();
+
+    public int getLikesCount() {
+        return likes.size();
+    }
+
+    public void addLike(Integer userId) {
+        likes.add(userId);
+    }
+
+    public void removeLike(Integer userId) {
+        likes.remove(userId);
+    }
 }

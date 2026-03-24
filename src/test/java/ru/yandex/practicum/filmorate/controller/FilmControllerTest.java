@@ -29,9 +29,10 @@ class FilmControllerTest {
         UserService userService = new UserService(userStorage);
         MpaService mpaService = new MpaService();
         GenreService genreService = new GenreService();
-        DirectorService directorService = new DirectorService();
+        DirectorService directorService = new DirectorService(filmStorage);
         FilmService filmService = new FilmService(filmStorage, userService, mpaService, genreService, directorService);
-        filmController = new FilmController(filmService);
+        EventService eventService = new EventService();
+        filmController = new FilmController(filmService, eventService);
 
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();

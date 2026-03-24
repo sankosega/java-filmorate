@@ -133,6 +133,44 @@ public class FilmService {
                 .collect(Collectors.toList());
     }
 
+    public List<Film> getRecommendations(Integer userId) {
+        userService.findById(userId);
+
+        Set<Integer> userLikes = filmStorage.findAll().stream()
+                .filter(f -> f.getLikes().contains(userId))
+                .map(Film::getId)
+                .collect(Collectors.toSet());
+
+        if (userLikes.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Map<Integer, Long> similarUsers = filmStorage.findAll().stream()
+                .filter(f -> f.getLikes().contains(userId))
+                .flatMap(f -> f.getLikes().stream())
+                .filter(id -> !id.equals(userId))
+                .collect(Collectors.groupingBy(id -> id, Collectors.counting()));
+
+        if (similarUsers.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Integer mostSimilarUser = similarUsers.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse(null);
+
+        if (mostSimilarUser == null) {
+            return Collections.emptyList();
+        }
+
+        return filmStorage.findAll().stream()
+                .filter(f -> f.getLikes().contains(mostSimilarUser))
+                .filter(f -> !userLikes.contains(f.getId()))
+                .sorted((f1, f2) -> Integer.compare(f2.getLikesCount(), f1.getLikesCount()))
+                .collect(Collectors.toList());
+    }
+
     private void validate(Film film) {
         if (film.getReleaseDate() != null && film.getReleaseDate().isBefore(CINEMA_BIRTHDAY)) {
             log.warn("Некорректная дата релиза: {}", film.getReleaseDate());

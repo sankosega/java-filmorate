@@ -55,17 +55,15 @@ public class UserService {
 
     public void addFriend(Integer userId, Integer friendId) {
         User user = findById(userId);
-        User friend = findById(friendId);
+        findById(friendId);
         user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
         log.info("Пользователь {} добавил в друзья {}", userId, friendId);
     }
 
     public void removeFriend(Integer userId, Integer friendId) {
         User user = findById(userId);
-        User friend = findById(friendId);
+        findById(friendId);
         user.getFriends().remove(friendId);
-        friend.getFriends().remove(userId);
         log.info("Пользователь {} удалил из друзей {}", userId, friendId);
     }
 

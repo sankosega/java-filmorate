@@ -5,7 +5,8 @@ import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.service.*;
+import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
 import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
 import jakarta.validation.ConstraintViolation;
@@ -24,8 +25,14 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         InMemoryUserStorage userStorage = new InMemoryUserStorage();
+        InMemoryFilmStorage filmStorage = new InMemoryFilmStorage();
         UserService userService = new UserService(userStorage);
-        userController = new UserController(userService);
+        MpaService mpaService = new MpaService();
+        GenreService genreService = new GenreService();
+        DirectorService directorService = new DirectorService(filmStorage);
+        FilmService filmService = new FilmService(filmStorage, userService, mpaService, genreService, directorService);
+        EventService eventService = new EventService();
+        userController = new UserController(userService, filmService, eventService);
 
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();

@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -13,7 +14,12 @@ import java.util.Map;
 @Service
 public class DirectorService {
     private final Map<Integer, Director> directors = new HashMap<>();
+    private final FilmStorage filmStorage;
     private int idCounter = 0;
+
+    public DirectorService(FilmStorage filmStorage) {
+        this.filmStorage = filmStorage;
+    }
 
     public Collection<Director> findAll() {
         return directors.values();
@@ -47,6 +53,9 @@ public class DirectorService {
         if (!directors.containsKey(id)) {
             throw new NotFoundException("Режиссёр с id=" + id + " не найден");
         }
+        filmStorage.findAll().forEach(film ->
+                film.getDirectors().removeIf(d -> d.getId().equals(id))
+        );
         directors.remove(id);
         log.info("Удалён режиссёр с id={}", id);
     }

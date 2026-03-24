@@ -64,6 +64,7 @@ public class ReviewService {
         Review existing = findById(review.getReviewId());
         existing.setContent(review.getContent());
         existing.setIsPositive(review.getIsPositive());
+        eventService.addEvent(existing.getUserId(), existing.getReviewId(), "REVIEW", "UPDATE");
         log.info("Обновлён отзыв: {}", existing);
         return existing;
     }

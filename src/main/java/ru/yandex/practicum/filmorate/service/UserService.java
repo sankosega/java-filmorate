@@ -49,6 +49,7 @@ public class UserService {
 
     public void delete(Integer id) {
         findById(id);
+        userStorage.findAll().forEach(user -> user.getFriends().remove(id));
         userStorage.delete(id);
         log.info("Удалён пользователь с id={}", id);
     }

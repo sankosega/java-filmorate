@@ -21,6 +21,13 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Map<String, String> handleNotFoundException(NotFoundException e) {
+        log.warn("Не найдено: {}", e.getMessage());
+        return Map.of("error", e.getMessage());
+    }
+
+    @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
         String message = e.getBindingResult().getFieldErrors().stream()

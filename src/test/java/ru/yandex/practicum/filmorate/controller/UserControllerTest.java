@@ -2,7 +2,6 @@ package ru.yandex.practicum.filmorate.controller;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -231,7 +230,7 @@ class UserControllerTest {
         user.setName("Test User");
         user.setBirthday(LocalDate.of(1990, 1, 1));
 
-        assertThrows(NotFoundException.class, () -> userController.update(user));
+        assertThrows(ValidationException.class, () -> userController.update(user));
     }
 
     @Test
@@ -243,6 +242,6 @@ class UserControllerTest {
         user.setName("Test User");
         user.setBirthday(LocalDate.of(1990, 1, 1));
 
-        assertThrows(NotFoundException.class, () -> userController.update(user));
+        assertThrows(ValidationException.class, () -> userController.update(user));
     }
 }

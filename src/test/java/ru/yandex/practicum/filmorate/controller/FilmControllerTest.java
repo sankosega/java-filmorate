@@ -2,12 +2,8 @@ package ru.yandex.practicum.filmorate.controller;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.service.*;
-import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
-import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
@@ -24,16 +20,7 @@ class FilmControllerTest {
 
     @BeforeEach
     void setUp() {
-        InMemoryUserStorage userStorage = new InMemoryUserStorage();
-        InMemoryFilmStorage filmStorage = new InMemoryFilmStorage();
-        UserService userService = new UserService(userStorage);
-        MpaService mpaService = new MpaService();
-        GenreService genreService = new GenreService();
-        DirectorService directorService = new DirectorService(filmStorage);
-        FilmService filmService = new FilmService(filmStorage, userService, mpaService, genreService, directorService);
-        EventService eventService = new EventService();
-        filmController = new FilmController(filmService, eventService);
-
+        filmController = new FilmController();
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();
     }
@@ -68,6 +55,18 @@ class FilmControllerTest {
     void shouldFailWhenNameIsBlank() {
         Film film = new Film();
         film.setName("   ");
+        film.setDescription("Test description");
+        film.setReleaseDate(LocalDate.of(2000, 1, 1));
+        film.setDuration(120);
+
+        Set<ConstraintViolation<Film>> violations = validator.validate(film);
+        assertFalse(violations.isEmpty());
+    }
+
+    @Test
+    void shouldFailWhenNameIsNull() {
+        Film film = new Film();
+        film.setName(null);
         film.setDescription("Test description");
         film.setReleaseDate(LocalDate.of(2000, 1, 1));
         film.setDuration(120);
@@ -148,6 +147,18 @@ class FilmControllerTest {
     }
 
     @Test
+    void shouldPassWhenDurationIsPositive() {
+        Film film = new Film();
+        film.setName("Test Film");
+        film.setDescription("Test description");
+        film.setReleaseDate(LocalDate.of(2000, 1, 1));
+        film.setDuration(1);
+
+        Set<ConstraintViolation<Film>> violations = validator.validate(film);
+        assertTrue(violations.isEmpty());
+    }
+
+    @Test
     void shouldGetAllFilms() {
         Film film1 = new Film();
         film1.setName("Film 1");
@@ -192,6 +203,18 @@ class FilmControllerTest {
         film.setReleaseDate(LocalDate.of(2000, 1, 1));
         film.setDuration(120);
 
-        assertThrows(NotFoundException.class, () -> filmController.update(film));
+        assertThrows(ValidationException.class, () -> filmController.update(film));
+    }
+
+    @Test
+    void shouldFailUpdateWhenFilmIdIsNull() {
+        Film film = new Film();
+        film.setId(null);
+        film.setName("Test Film");
+        film.setDescription("Test description");
+        film.setReleaseDate(LocalDate.of(2000, 1, 1));
+        film.setDuration(120);
+
+        assertThrows(ValidationException.class, () -> filmController.update(film));
     }
 }

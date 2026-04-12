@@ -2,12 +2,8 @@ package ru.yandex.practicum.filmorate.controller;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.service.*;
-import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
-import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
@@ -24,16 +20,7 @@ class UserControllerTest {
 
     @BeforeEach
     void setUp() {
-        InMemoryUserStorage userStorage = new InMemoryUserStorage();
-        InMemoryFilmStorage filmStorage = new InMemoryFilmStorage();
-        UserService userService = new UserService(userStorage);
-        MpaService mpaService = new MpaService();
-        GenreService genreService = new GenreService();
-        DirectorService directorService = new DirectorService(filmStorage);
-        FilmService filmService = new FilmService(filmStorage, userService, mpaService, genreService, directorService);
-        EventService eventService = new EventService();
-        userController = new UserController(userService, filmService, eventService);
-
+        userController = new UserController();
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();
     }
@@ -65,6 +52,18 @@ class UserControllerTest {
     }
 
     @Test
+    void shouldFailWhenEmailIsNull() {
+        User user = new User();
+        user.setEmail(null);
+        user.setLogin("testuser");
+        user.setName("Test User");
+        user.setBirthday(LocalDate.of(1990, 1, 1));
+
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertFalse(violations.isEmpty());
+    }
+
+    @Test
     void shouldFailWhenEmailWithoutAtSymbol() {
         User user = new User();
         user.setEmail("invalid-email");
@@ -81,6 +80,18 @@ class UserControllerTest {
         User user = new User();
         user.setEmail("test@example.com");
         user.setLogin("");
+        user.setName("Test User");
+        user.setBirthday(LocalDate.of(1990, 1, 1));
+
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertFalse(violations.isEmpty());
+    }
+
+    @Test
+    void shouldFailWhenLoginIsNull() {
+        User user = new User();
+        user.setEmail("test@example.com");
+        user.setLogin(null);
         user.setName("Test User");
         user.setBirthday(LocalDate.of(1990, 1, 1));
 
@@ -126,6 +137,19 @@ class UserControllerTest {
     }
 
     @Test
+    void shouldUseLoginAsNameWhenNameIsBlank() {
+        User user = new User();
+        user.setEmail("test@example.com");
+        user.setLogin("testuser");
+        user.setName("   ");
+        user.setBirthday(LocalDate.of(1990, 1, 1));
+
+        User created = userController.create(user);
+
+        assertEquals("testuser", created.getName());
+    }
+
+    @Test
     void shouldFailWhenBirthdayIsInFuture() {
         User user = new User();
         user.setEmail("test@example.com");
@@ -144,6 +168,18 @@ class UserControllerTest {
         user.setLogin("testuser");
         user.setName("Test User");
         user.setBirthday(LocalDate.now());
+
+        Set<ConstraintViolation<User>> violations = validator.validate(user);
+        assertTrue(violations.isEmpty());
+    }
+
+    @Test
+    void shouldPassWhenBirthdayIsInPast() {
+        User user = new User();
+        user.setEmail("test@example.com");
+        user.setLogin("testuser");
+        user.setName("Test User");
+        user.setBirthday(LocalDate.of(1990, 1, 1));
 
         Set<ConstraintViolation<User>> violations = validator.validate(user);
         assertTrue(violations.isEmpty());
@@ -194,6 +230,18 @@ class UserControllerTest {
         user.setName("Test User");
         user.setBirthday(LocalDate.of(1990, 1, 1));
 
-        assertThrows(NotFoundException.class, () -> userController.update(user));
+        assertThrows(ValidationException.class, () -> userController.update(user));
+    }
+
+    @Test
+    void shouldFailUpdateWhenUserIdIsNull() {
+        User user = new User();
+        user.setId(null);
+        user.setEmail("test@example.com");
+        user.setLogin("testuser");
+        user.setName("Test User");
+        user.setBirthday(LocalDate.of(1990, 1, 1));
+
+        assertThrows(ValidationException.class, () -> userController.update(user));
     }
 }

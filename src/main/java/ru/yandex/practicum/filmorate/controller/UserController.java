@@ -7,27 +7,28 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @RestController
 @RequestMapping("/users")
 public class UserController {
-    private final Map<Integer, User> users = new HashMap<>();
-    private int idCounter = 0;
+    private final Map<Integer, User> users = new ConcurrentHashMap<>();
+    private final AtomicInteger idCounter = new AtomicInteger(0);
 
     @GetMapping
     public Collection<User> findAll() {
-        return users.values();
+        return new ArrayList<>(users.values());
     }
 
     @PostMapping
     public User create(@Valid @RequestBody User user) {
         validate(user);
-        setNameIfEmpty(user);
-        user.setId(++idCounter);
+        user.setId(idCounter.incrementAndGet());
         users.put(user.getId(), user);
         log.info("Создан пользователь: {}", user);
         return user;
@@ -40,22 +41,15 @@ public class UserController {
             throw new NotFoundException("Пользователь с id=" + user.getId() + " не найден");
         }
         validate(user);
-        setNameIfEmpty(user);
         users.put(user.getId(), user);
         log.info("Обновлён пользователь: {}", user);
         return user;
     }
 
     private void validate(User user) {
-        if (user.getLogin().contains(" ")) {
+        if (user.getLogin() != null && user.getLogin().contains(" ")) {
             log.warn("Логин содержит пробелы: {}", user.getLogin());
             throw new ValidationException("Логин не может содержать пробелы");
-        }
-    }
-
-    private void setNameIfEmpty(User user) {
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
         }
     }
 }

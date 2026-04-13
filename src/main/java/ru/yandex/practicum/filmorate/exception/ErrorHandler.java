@@ -7,34 +7,32 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.Map;
-
 @Slf4j
 @RestControllerAdvice
 public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, String> handleValidationException(ValidationException e) {
+    public ErrorResponse handleValidationException(ValidationException e) {
         log.warn("Ошибка валидации: {}", e.getMessage());
-        return Map.of("error", e.getMessage());
+        return new ErrorResponse(e.getMessage());
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public Map<String, String> handleNotFoundException(NotFoundException e) {
+    public ErrorResponse handleNotFoundException(NotFoundException e) {
         log.warn("Не найдено: {}", e.getMessage());
-        return Map.of("error", e.getMessage());
+        return new ErrorResponse(e.getMessage());
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, String> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
+    public ErrorResponse handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
         String message = e.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .reduce((a, b) -> a + "; " + b)
                 .orElse("Ошибка валидации");
         log.warn("Ошибка валидации: {}", message);
-        return Map.of("error", message);
+        return new ErrorResponse(message);
     }
 }

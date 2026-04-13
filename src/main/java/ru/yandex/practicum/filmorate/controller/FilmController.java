@@ -4,31 +4,29 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @RestController
 @RequestMapping("/films")
 public class FilmController {
-    private final Map<Integer, Film> films = new HashMap<>();
-    private int idCounter = 0;
-    private static final LocalDate CINEMA_BIRTHDAY = LocalDate.of(1895, 12, 28);
+    private final Map<Integer, Film> films = new ConcurrentHashMap<>();
+    private final AtomicInteger idCounter = new AtomicInteger(0);
 
     @GetMapping
     public Collection<Film> findAll() {
-        return films.values();
+        return new ArrayList<>(films.values());
     }
 
     @PostMapping
     public Film create(@Valid @RequestBody Film film) {
-        validate(film);
-        film.setId(++idCounter);
+        film.setId(idCounter.incrementAndGet());
         films.put(film.getId(), film);
         log.info("Добавлен фильм: {}", film);
         return film;
@@ -40,16 +38,8 @@ public class FilmController {
             log.warn("Фильм с id={} не найден", film.getId());
             throw new NotFoundException("Фильм с id=" + film.getId() + " не найден");
         }
-        validate(film);
         films.put(film.getId(), film);
         log.info("Обновлён фильм: {}", film);
         return film;
-    }
-
-    private void validate(Film film) {
-        if (film.getReleaseDate() != null && film.getReleaseDate().isBefore(CINEMA_BIRTHDAY)) {
-            log.warn("Дата релиза раньше 28 декабря 1895 года: {}", film.getReleaseDate());
-            throw new ValidationException("Дата релиза — не раньше 28 декабря 1895 года");
-        }
     }
 }

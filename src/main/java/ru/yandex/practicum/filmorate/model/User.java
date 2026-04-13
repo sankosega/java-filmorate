@@ -3,26 +3,39 @@ package ru.yandex.practicum.filmorate.model;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PastOrPresent;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.time.LocalDate;
 
 /**
  * User.
  */
-@Data
+@Getter
+@EqualsAndHashCode
+@ToString
 public class User {
+    @Setter
     private Integer id;
 
     @NotBlank(message = "Электронная почта не может быть пустой")
     @Email(message = "Электронная почта должна содержать символ @")
-    private String email;
+    private final String email;
 
     @NotBlank(message = "Логин не может быть пустым")
-    private String login;
+    private final String login;
 
-    private String name;
+    private final String name;
 
     @PastOrPresent(message = "Дата рождения не может быть в будущем")
-    private LocalDate birthday;
+    private final LocalDate birthday;
+
+    public User(String email, String login, String name, LocalDate birthday) {
+        this.email = email;
+        this.login = login;
+        this.name = (name == null || name.isBlank()) ? login : name;
+        this.birthday = birthday;
+    }
 }

@@ -1,23 +1,29 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.Film;
-
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Film;
+
 import java.time.LocalDate;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class FilmControllerTest {
     private FilmController filmController;
     private Validator validator;
+    private static final LocalDate VALID_DATE = LocalDate.of(2000, 1, 1);
 
     @BeforeEach
     void setUp() {
@@ -28,11 +34,7 @@ class FilmControllerTest {
 
     @Test
     void shouldCreateFilmWithValidData() {
-        Film film = new Film();
-        film.setName("Test Film");
-        film.setDescription("Test description");
-        film.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film.setDuration(120);
+        Film film = new Film("Test Film", "Test description", VALID_DATE, 120);
 
         Film created = filmController.create(film);
 
@@ -40,37 +42,11 @@ class FilmControllerTest {
         assertEquals("Test Film", created.getName());
     }
 
-    @Test
-    void shouldFailWhenNameIsEmpty() {
-        Film film = new Film();
-        film.setName("");
-        film.setDescription("Test description");
-        film.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film.setDuration(120);
-
-        Set<ConstraintViolation<Film>> violations = validator.validate(film);
-        assertFalse(violations.isEmpty());
-    }
-
-    @Test
-    void shouldFailWhenNameIsBlank() {
-        Film film = new Film();
-        film.setName("   ");
-        film.setDescription("Test description");
-        film.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film.setDuration(120);
-
-        Set<ConstraintViolation<Film>> violations = validator.validate(film);
-        assertFalse(violations.isEmpty());
-    }
-
-    @Test
-    void shouldFailWhenNameIsNull() {
-        Film film = new Film();
-        film.setName(null);
-        film.setDescription("Test description");
-        film.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film.setDuration(120);
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"   "})
+    void shouldFailWhenNameIsInvalid(String name) {
+        Film film = new Film(name, "Test description", VALID_DATE, 120);
 
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
         assertFalse(violations.isEmpty());
@@ -78,11 +54,7 @@ class FilmControllerTest {
 
     @Test
     void shouldFailWhenDescriptionExceeds200Characters() {
-        Film film = new Film();
-        film.setName("Test Film");
-        film.setDescription("A".repeat(201));
-        film.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film.setDuration(120);
+        Film film = new Film("Test Film", "A".repeat(201), VALID_DATE, 120);
 
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
         assertFalse(violations.isEmpty());
@@ -90,88 +62,51 @@ class FilmControllerTest {
 
     @Test
     void shouldPassWhenDescriptionIs200Characters() {
-        Film film = new Film();
-        film.setName("Test Film");
-        film.setDescription("A".repeat(200));
-        film.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film.setDuration(120);
+        Film film = new Film("Test Film", "A".repeat(200), VALID_DATE, 120);
 
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
         assertTrue(violations.isEmpty());
     }
 
-    @Test
-    void shouldFailWhenReleaseDateIsBeforeCinemaBirthday() {
-        Film film = new Film();
-        film.setName("Test Film");
-        film.setDescription("Test description");
-        film.setReleaseDate(LocalDate.of(1895, 12, 27));
-        film.setDuration(120);
-
-        assertThrows(ValidationException.class, () -> filmController.create(film));
-    }
-
-    @Test
-    void shouldPassWhenReleaseDateIsCinemaBirthday() {
-        Film film = new Film();
-        film.setName("Test Film");
-        film.setDescription("Test description");
-        film.setReleaseDate(LocalDate.of(1895, 12, 28));
-        film.setDuration(120);
-
-        Film created = filmController.create(film);
-        assertNotNull(created.getId());
-    }
-
-    @Test
-    void shouldFailWhenDurationIsNegative() {
-        Film film = new Film();
-        film.setName("Test Film");
-        film.setDescription("Test description");
-        film.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film.setDuration(-1);
+    @ParameterizedTest
+    @MethodSource("releaseDateCases")
+    void shouldValidateReleaseDate(LocalDate releaseDate, boolean expectedValid) {
+        Film film = new Film("Test Film", "Test description", releaseDate, 120);
 
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
-        assertFalse(violations.isEmpty());
+        assertEquals(expectedValid, violations.isEmpty());
     }
 
-    @Test
-    void shouldFailWhenDurationIsZero() {
-        Film film = new Film();
-        film.setName("Test Film");
-        film.setDescription("Test description");
-        film.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film.setDuration(0);
-
-        Set<ConstraintViolation<Film>> violations = validator.validate(film);
-        assertFalse(violations.isEmpty());
+    private static Stream<Arguments> releaseDateCases() {
+        return Stream.of(
+                Arguments.of(LocalDate.of(1895, 12, 27), false),
+                Arguments.of(LocalDate.of(1895, 12, 28), true),
+                Arguments.of(LocalDate.of(2000, 1, 1), true)
+        );
     }
 
-    @Test
-    void shouldPassWhenDurationIsPositive() {
-        Film film = new Film();
-        film.setName("Test Film");
-        film.setDescription("Test description");
-        film.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film.setDuration(1);
+    @ParameterizedTest
+    @MethodSource("durationCases")
+    void shouldValidateDuration(Integer duration, boolean expectedValid) {
+        Film film = new Film("Test Film", "Test description", VALID_DATE, duration);
 
         Set<ConstraintViolation<Film>> violations = validator.validate(film);
-        assertTrue(violations.isEmpty());
+        assertEquals(expectedValid, violations.isEmpty());
+    }
+
+    private static Stream<Arguments> durationCases() {
+        return Stream.of(
+                Arguments.of(-1, false),
+                Arguments.of(0, false),
+                Arguments.of(1, true),
+                Arguments.of(120, true)
+        );
     }
 
     @Test
     void shouldGetAllFilms() {
-        Film film1 = new Film();
-        film1.setName("Film 1");
-        film1.setDescription("Description 1");
-        film1.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film1.setDuration(120);
-
-        Film film2 = new Film();
-        film2.setName("Film 2");
-        film2.setDescription("Description 2");
-        film2.setReleaseDate(LocalDate.of(2001, 1, 1));
-        film2.setDuration(90);
+        Film film1 = new Film("Film 1", "Description 1", VALID_DATE, 120);
+        Film film2 = new Film("Film 2", "Description 2", LocalDate.of(2001, 1, 1), 90);
 
         filmController.create(film1);
         filmController.create(film2);
@@ -181,40 +116,27 @@ class FilmControllerTest {
 
     @Test
     void shouldUpdateFilm() {
-        Film film = new Film();
-        film.setName("Original Name");
-        film.setDescription("Original description");
-        film.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film.setDuration(120);
-
+        Film film = new Film("Original Name", "Original description", VALID_DATE, 120);
         Film created = filmController.create(film);
 
-        created.setName("Updated Name");
-        Film updated = filmController.update(created);
+        Film updatedFilm = new Film("Updated Name", "Original description", VALID_DATE, 120);
+        updatedFilm.setId(created.getId());
+        Film updated = filmController.update(updatedFilm);
 
         assertEquals("Updated Name", updated.getName());
     }
 
     @Test
     void shouldFailUpdateWhenFilmNotFound() {
-        Film film = new Film();
+        Film film = new Film("Test Film", "Test description", VALID_DATE, 120);
         film.setId(999);
-        film.setName("Test Film");
-        film.setDescription("Test description");
-        film.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film.setDuration(120);
 
         assertThrows(NotFoundException.class, () -> filmController.update(film));
     }
 
     @Test
     void shouldFailUpdateWhenFilmIdIsNull() {
-        Film film = new Film();
-        film.setId(null);
-        film.setName("Test Film");
-        film.setDescription("Test description");
-        film.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film.setDuration(120);
+        Film film = new Film("Test Film", "Test description", VALID_DATE, 120);
 
         assertThrows(NotFoundException.class, () -> filmController.update(film));
     }

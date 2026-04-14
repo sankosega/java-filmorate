@@ -14,21 +14,25 @@ import org.junit.jupiter.params.provider.ValueSource;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class UserControllerTest {
-    private UserController userController;
+    private UserService userService;
     private Validator validator;
     private static final LocalDate VALID_BIRTHDAY = LocalDate.of(1990, 1, 1);
 
     @BeforeEach
     void setUp() {
-        userController = new UserController();
+        InMemoryUserStorage userStorage = new InMemoryUserStorage();
+        userService = new UserService(userStorage);
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();
     }
@@ -37,7 +41,7 @@ class UserControllerTest {
     void shouldCreateUserWithValidData() {
         User user = new User("test@example.com", "testuser", "Test User", VALID_BIRTHDAY);
 
-        User created = userController.create(user);
+        User created = userService.create(user);
 
         assertNotNull(created.getId());
         assertEquals("test@example.com", created.getEmail());
@@ -66,7 +70,7 @@ class UserControllerTest {
     void shouldFailWhenLoginContainsSpaces() {
         User user = new User("test@example.com", "test user", "Test User", VALID_BIRTHDAY);
 
-        assertThrows(ValidationException.class, () -> userController.create(user));
+        assertThrows(ValidationException.class, () -> userService.create(user));
     }
 
     @ParameterizedTest
@@ -75,7 +79,7 @@ class UserControllerTest {
     void shouldUseLoginAsNameWhenNameIsBlank(String name) {
         User user = new User("test@example.com", "testuser", name, VALID_BIRTHDAY);
 
-        User created = userController.create(user);
+        User created = userService.create(user);
 
         assertEquals("testuser", created.getName());
     }
@@ -102,20 +106,20 @@ class UserControllerTest {
         User user1 = new User("user1@example.com", "user1", "User 1", VALID_BIRTHDAY);
         User user2 = new User("user2@example.com", "user2", "User 2", LocalDate.of(1995, 1, 1));
 
-        userController.create(user1);
-        userController.create(user2);
+        userService.create(user1);
+        userService.create(user2);
 
-        assertEquals(2, userController.findAll().size());
+        assertEquals(2, userService.findAll().size());
     }
 
     @Test
     void shouldUpdateUser() {
         User user = new User("test@example.com", "testuser", "Original Name", VALID_BIRTHDAY);
-        User created = userController.create(user);
+        User created = userService.create(user);
 
         User updatedUser = new User("test@example.com", "testuser", "Updated Name", VALID_BIRTHDAY);
         updatedUser.setId(created.getId());
-        User updated = userController.update(updatedUser);
+        User updated = userService.update(updatedUser);
 
         assertEquals("Updated Name", updated.getName());
     }
@@ -123,15 +127,51 @@ class UserControllerTest {
     @Test
     void shouldFailUpdateWhenUserNotFound() {
         User user = new User("test@example.com", "testuser", "Test User", VALID_BIRTHDAY);
-        user.setId(999);
+        user.setId(999L);
 
-        assertThrows(NotFoundException.class, () -> userController.update(user));
+        assertThrows(NotFoundException.class, () -> userService.update(user));
     }
 
     @Test
     void shouldFailUpdateWhenUserIdIsNull() {
         User user = new User("test@example.com", "testuser", "Test User", VALID_BIRTHDAY);
 
-        assertThrows(NotFoundException.class, () -> userController.update(user));
+        assertThrows(ValidationException.class, () -> userService.update(user));
+    }
+
+    @Test
+    void shouldAddAndRemoveFriends() {
+        User user1 = new User("user1@example.com", "user1", "User 1", VALID_BIRTHDAY);
+        User user2 = new User("user2@example.com", "user2", "User 2", VALID_BIRTHDAY);
+
+        userService.create(user1);
+        userService.create(user2);
+
+        userService.addFriend(user1.getId(), user2.getId());
+
+        List<User> friends = userService.getFriends(user1.getId());
+        assertEquals(1, friends.size());
+        assertEquals(user2.getId(), friends.get(0).getId());
+
+        userService.removeFriend(user1.getId(), user2.getId());
+        assertTrue(userService.getFriends(user1.getId()).isEmpty());
+    }
+
+    @Test
+    void shouldGetCommonFriends() {
+        User user1 = new User("user1@example.com", "user1", "User 1", VALID_BIRTHDAY);
+        User user2 = new User("user2@example.com", "user2", "User 2", VALID_BIRTHDAY);
+        User user3 = new User("user3@example.com", "user3", "User 3", VALID_BIRTHDAY);
+
+        userService.create(user1);
+        userService.create(user2);
+        userService.create(user3);
+
+        userService.addFriend(user1.getId(), user3.getId());
+        userService.addFriend(user2.getId(), user3.getId());
+
+        List<User> commonFriends = userService.getCommonFriends(user1.getId(), user2.getId());
+        assertEquals(1, commonFriends.size());
+        assertEquals(user3.getId(), commonFriends.get(0).getId());
     }
 }

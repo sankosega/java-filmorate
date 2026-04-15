@@ -3,35 +3,40 @@ package ru.yandex.practicum.filmorate.model;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import ru.yandex.practicum.filmorate.validation.ReleaseDateConstraint;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Film.
  */
-@Getter
-@RequiredArgsConstructor
-@EqualsAndHashCode
-@ToString
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Film {
-    @Setter
-    private Integer id;
+    private Long id;
 
     @NotBlank(message = "Название не может быть пустым")
-    private final String name;
+    private String name;
 
     @Size(max = 200, message = "Максимальная длина описания — 200 символов")
-    private final String description;
+    private String description;
 
     @ReleaseDateConstraint
-    private final LocalDate releaseDate;
+    private LocalDate releaseDate;
 
     @Positive(message = "Продолжительность фильма должна быть положительным числом")
-    private final Integer duration;
+    private Integer duration;
+
+    private Mpa mpa;
+
+    @Builder.Default
+    private Set<Genre> genres = new LinkedHashSet<>();
 }

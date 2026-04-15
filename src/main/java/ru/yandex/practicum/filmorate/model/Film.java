@@ -1,5 +1,7 @@
 package ru.yandex.practicum.filmorate.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -41,7 +43,14 @@ public class Film {
     @Setter
     private Set<Genre> genres = new LinkedHashSet<>();
 
-    public Film(Long id, String name, String description, LocalDate releaseDate, Integer duration, Mpa mpa, Set<Genre> genres) {
+    @JsonCreator
+    public Film(@JsonProperty("id") Long id,
+                @JsonProperty("name") String name,
+                @JsonProperty("description") String description,
+                @JsonProperty("releaseDate") LocalDate releaseDate,
+                @JsonProperty("duration") Integer duration,
+                @JsonProperty("mpa") Mpa mpa,
+                @JsonProperty("genres") Set<Genre> genres) {
         this.id = id;
         this.name = name;
         this.description = description;

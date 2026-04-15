@@ -1,5 +1,7 @@
 package ru.yandex.practicum.filmorate.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PastOrPresent;
@@ -32,7 +34,12 @@ public class User {
     @PastOrPresent(message = "Дата рождения не может быть в будущем")
     private final LocalDate birthday;
 
-    public User(Long id, String email, String login, String name, LocalDate birthday) {
+    @JsonCreator
+    public User(@JsonProperty("id") Long id,
+                @JsonProperty("email") String email,
+                @JsonProperty("login") String login,
+                @JsonProperty("name") String name,
+                @JsonProperty("birthday") LocalDate birthday) {
         this.id = id;
         this.email = email;
         this.login = login;

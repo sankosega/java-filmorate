@@ -12,22 +12,29 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
+import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class FilmControllerTest {
-    private FilmController filmController;
+    private FilmService filmService;
     private Validator validator;
     private static final LocalDate VALID_DATE = LocalDate.of(2000, 1, 1);
 
     @BeforeEach
     void setUp() {
-        filmController = new FilmController();
+        InMemoryFilmStorage filmStorage = new InMemoryFilmStorage();
+        InMemoryUserStorage userStorage = new InMemoryUserStorage();
+        filmService = new FilmService(filmStorage, userStorage);
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();
     }
@@ -36,7 +43,7 @@ class FilmControllerTest {
     void shouldCreateFilmWithValidData() {
         Film film = new Film("Test Film", "Test description", VALID_DATE, 120);
 
-        Film created = filmController.create(film);
+        Film created = filmService.create(film);
 
         assertNotNull(created.getId());
         assertEquals("Test Film", created.getName());
@@ -108,20 +115,20 @@ class FilmControllerTest {
         Film film1 = new Film("Film 1", "Description 1", VALID_DATE, 120);
         Film film2 = new Film("Film 2", "Description 2", LocalDate.of(2001, 1, 1), 90);
 
-        filmController.create(film1);
-        filmController.create(film2);
+        filmService.create(film1);
+        filmService.create(film2);
 
-        assertEquals(2, filmController.findAll().size());
+        assertEquals(2, filmService.findAll().size());
     }
 
     @Test
     void shouldUpdateFilm() {
         Film film = new Film("Original Name", "Original description", VALID_DATE, 120);
-        Film created = filmController.create(film);
+        Film created = filmService.create(film);
 
         Film updatedFilm = new Film("Updated Name", "Original description", VALID_DATE, 120);
         updatedFilm.setId(created.getId());
-        Film updated = filmController.update(updatedFilm);
+        Film updated = filmService.update(updatedFilm);
 
         assertEquals("Updated Name", updated.getName());
     }
@@ -129,15 +136,29 @@ class FilmControllerTest {
     @Test
     void shouldFailUpdateWhenFilmNotFound() {
         Film film = new Film("Test Film", "Test description", VALID_DATE, 120);
-        film.setId(999);
+        film.setId(999L);
 
-        assertThrows(NotFoundException.class, () -> filmController.update(film));
+        assertThrows(NotFoundException.class, () -> filmService.update(film));
     }
 
     @Test
     void shouldFailUpdateWhenFilmIdIsNull() {
         Film film = new Film("Test Film", "Test description", VALID_DATE, 120);
 
-        assertThrows(NotFoundException.class, () -> filmController.update(film));
+        assertThrows(ValidationException.class, () -> filmService.update(film));
+    }
+
+    @Test
+    void shouldGetPopularFilms() {
+        Film film1 = new Film("Film 1", "Description 1", VALID_DATE, 120);
+        Film film2 = new Film("Film 2", "Description 2", VALID_DATE, 90);
+        Film film3 = new Film("Film 3", "Description 3", VALID_DATE, 100);
+
+        filmService.create(film1);
+        filmService.create(film2);
+        filmService.create(film3);
+
+        List<Film> popular = filmService.getPopular(2);
+        assertEquals(2, popular.size());
     }
 }

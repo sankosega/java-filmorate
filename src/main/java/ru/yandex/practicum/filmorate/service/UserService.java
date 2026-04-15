@@ -19,7 +19,6 @@ public class UserService {
 
     public User create(User user) {
         validateLogin(user);
-        setNameIfEmpty(user);
         return userStorage.add(user);
     }
 
@@ -29,7 +28,6 @@ public class UserService {
         }
         getById(user.getId());
         validateLogin(user);
-        setNameIfEmpty(user);
         return userStorage.update(user);
     }
 
@@ -71,12 +69,6 @@ public class UserService {
         if (user.getLogin() != null && user.getLogin().contains(" ")) {
             log.warn("Логин содержит пробелы: {}", user.getLogin());
             throw new ValidationException("Логин не может содержать пробелы");
-        }
-    }
-
-    private void setNameIfEmpty(User user) {
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
         }
     }
 }

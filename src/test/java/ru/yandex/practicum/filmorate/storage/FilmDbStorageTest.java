@@ -26,13 +26,7 @@ class FilmDbStorageTest {
 
     @Test
     void testAddFilm() {
-        Film film = Film.builder()
-                .name("Test Film")
-                .description("Test Description")
-                .releaseDate(LocalDate.of(2000, 1, 1))
-                .duration(120)
-                .mpa(new Mpa(1, "G"))
-                .build();
+        Film film = new Film("Test Film", "Test Description", LocalDate.of(2000, 1, 1), 120, new Mpa(1, "G"));
 
         Film savedFilm = filmStorage.add(film);
 
@@ -42,13 +36,7 @@ class FilmDbStorageTest {
 
     @Test
     void testFindFilmById() {
-        Film film = Film.builder()
-                .name("Find Film")
-                .description("Find Description")
-                .releaseDate(LocalDate.of(2001, 2, 2))
-                .duration(90)
-                .mpa(new Mpa(2, "PG"))
-                .build();
+        Film film = new Film("Find Film", "Find Description", LocalDate.of(2001, 2, 2), 90, new Mpa(2, "PG"));
         Film savedFilm = filmStorage.add(film);
 
         Optional<Film> foundFilm = filmStorage.findById(savedFilm.getId());
@@ -64,20 +52,8 @@ class FilmDbStorageTest {
 
     @Test
     void testFindAllFilms() {
-        Film film1 = Film.builder()
-                .name("Film 1")
-                .description("Description 1")
-                .releaseDate(LocalDate.of(2000, 1, 1))
-                .duration(100)
-                .mpa(new Mpa(1, "G"))
-                .build();
-        Film film2 = Film.builder()
-                .name("Film 2")
-                .description("Description 2")
-                .releaseDate(LocalDate.of(2001, 2, 2))
-                .duration(110)
-                .mpa(new Mpa(2, "PG"))
-                .build();
+        Film film1 = new Film("Film 1", "Description 1", LocalDate.of(2000, 1, 1), 100, new Mpa(1, "G"));
+        Film film2 = new Film("Film 2", "Description 2", LocalDate.of(2001, 2, 2), 110, new Mpa(2, "PG"));
 
         filmStorage.add(film1);
         filmStorage.add(film2);
@@ -88,20 +64,15 @@ class FilmDbStorageTest {
 
     @Test
     void testUpdateFilm() {
-        Film film = Film.builder()
-                .name("Update Film")
-                .description("Update Description")
-                .releaseDate(LocalDate.of(2000, 1, 1))
-                .duration(100)
-                .mpa(new Mpa(1, "G"))
-                .build();
+        Film film = new Film("Update Film", "Update Description", LocalDate.of(2000, 1, 1), 100, new Mpa(1, "G"));
         Film savedFilm = filmStorage.add(film);
 
-        savedFilm.setName("Updated Film Name");
-        filmStorage.update(savedFilm);
+        Film updatedFilm = new Film(savedFilm.getId(), "Updated Film Name", "Update Description",
+                LocalDate.of(2000, 1, 1), 100, new Mpa(1, "G"), new LinkedHashSet<>());
+        filmStorage.update(updatedFilm);
 
-        Optional<Film> updatedFilm = filmStorage.findById(savedFilm.getId());
-        assertThat(updatedFilm)
+        Optional<Film> result = filmStorage.findById(savedFilm.getId());
+        assertThat(result)
                 .isPresent()
                 .hasValueSatisfying(f -> assertThat(f.getName()).isEqualTo("Updated Film Name"));
     }
@@ -112,42 +83,23 @@ class FilmDbStorageTest {
         genres.add(new Genre(1, "Комедия"));
         genres.add(new Genre(2, "Драма"));
 
-        Film film = Film.builder()
-                .name("Genre Film")
-                .description("Genre Description")
-                .releaseDate(LocalDate.of(2000, 1, 1))
-                .duration(100)
-                .mpa(new Mpa(1, "G"))
-                .genres(genres)
-                .build();
+        Film film = new Film(null, "Genre Film", "Genre Description",
+                LocalDate.of(2000, 1, 1), 100, new Mpa(1, "G"), genres);
 
         Film savedFilm = filmStorage.add(film);
 
         Optional<Film> foundFilm = filmStorage.findById(savedFilm.getId());
         assertThat(foundFilm)
                 .isPresent()
-                .hasValueSatisfying(f -> {
-                    assertThat(f.getGenres()).hasSize(2);
-                });
+                .hasValueSatisfying(f -> assertThat(f.getGenres()).hasSize(2));
     }
 
     @Test
     void testAddAndRemoveLike() {
-        User user = User.builder()
-                .email("liker@mail.ru")
-                .login("liker")
-                .name("Liker")
-                .birthday(LocalDate.of(1990, 1, 1))
-                .build();
+        User user = new User("liker@mail.ru", "liker", "Liker", LocalDate.of(1990, 1, 1));
         userStorage.add(user);
 
-        Film film = Film.builder()
-                .name("Like Film")
-                .description("Like Description")
-                .releaseDate(LocalDate.of(2000, 1, 1))
-                .duration(100)
-                .mpa(new Mpa(1, "G"))
-                .build();
+        Film film = new Film("Like Film", "Like Description", LocalDate.of(2000, 1, 1), 100, new Mpa(1, "G"));
         filmStorage.add(film);
 
         filmStorage.addLike(film.getId(), user.getId());
@@ -160,35 +112,13 @@ class FilmDbStorageTest {
 
     @Test
     void testGetPopularFilms() {
-        User user1 = User.builder()
-                .email("pop1@mail.ru")
-                .login("pop1")
-                .name("Pop1")
-                .birthday(LocalDate.of(1990, 1, 1))
-                .build();
-        User user2 = User.builder()
-                .email("pop2@mail.ru")
-                .login("pop2")
-                .name("Pop2")
-                .birthday(LocalDate.of(1991, 2, 2))
-                .build();
+        User user1 = new User("pop1@mail.ru", "pop1", "Pop1", LocalDate.of(1990, 1, 1));
+        User user2 = new User("pop2@mail.ru", "pop2", "Pop2", LocalDate.of(1991, 2, 2));
         userStorage.add(user1);
         userStorage.add(user2);
 
-        Film film1 = Film.builder()
-                .name("Popular Film 1")
-                .description("Description 1")
-                .releaseDate(LocalDate.of(2000, 1, 1))
-                .duration(100)
-                .mpa(new Mpa(1, "G"))
-                .build();
-        Film film2 = Film.builder()
-                .name("Popular Film 2")
-                .description("Description 2")
-                .releaseDate(LocalDate.of(2001, 2, 2))
-                .duration(110)
-                .mpa(new Mpa(2, "PG"))
-                .build();
+        Film film1 = new Film("Popular Film 1", "Description 1", LocalDate.of(2000, 1, 1), 100, new Mpa(1, "G"));
+        Film film2 = new Film("Popular Film 2", "Description 2", LocalDate.of(2001, 2, 2), 110, new Mpa(2, "PG"));
         filmStorage.add(film1);
         filmStorage.add(film2);
 

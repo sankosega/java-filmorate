@@ -153,14 +153,14 @@ public class FilmDbStorage implements FilmStorage {
         if (!rs.wasNull()) {
             mpa = new Mpa(mpaId, rs.getString("mpa_name"));
         }
-        return Film.builder()
-                .id(rs.getLong("id"))
-                .name(rs.getString("name"))
-                .description(rs.getString("description"))
-                .releaseDate(rs.getDate("release_date").toLocalDate())
-                .duration(rs.getInt("duration"))
-                .mpa(mpa)
-                .genres(new LinkedHashSet<>())
-                .build();
+        Film film = new Film(
+                rs.getString("name"),
+                rs.getString("description"),
+                rs.getDate("release_date").toLocalDate(),
+                rs.getInt("duration"),
+                mpa
+        );
+        film.setId(rs.getLong("id"));
+        return film;
     }
 }

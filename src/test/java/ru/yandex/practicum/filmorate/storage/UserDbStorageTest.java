@@ -23,12 +23,7 @@ class UserDbStorageTest {
 
     @Test
     void testAddUser() {
-        User user = User.builder()
-                .email("test@mail.ru")
-                .login("testuser")
-                .name("Test User")
-                .birthday(LocalDate.of(1990, 1, 1))
-                .build();
+        User user = new User("test@mail.ru", "testuser", "Test User", LocalDate.of(1990, 1, 1));
 
         User savedUser = userStorage.add(user);
 
@@ -38,12 +33,7 @@ class UserDbStorageTest {
 
     @Test
     void testFindUserById() {
-        User user = User.builder()
-                .email("find@mail.ru")
-                .login("finduser")
-                .name("Find User")
-                .birthday(LocalDate.of(1995, 5, 15))
-                .build();
+        User user = new User("find@mail.ru", "finduser", "Find User", LocalDate.of(1995, 5, 15));
         User savedUser = userStorage.add(user);
 
         Optional<User> foundUser = userStorage.findById(savedUser.getId());
@@ -59,18 +49,8 @@ class UserDbStorageTest {
 
     @Test
     void testFindAllUsers() {
-        User user1 = User.builder()
-                .email("user1@mail.ru")
-                .login("user1")
-                .name("User One")
-                .birthday(LocalDate.of(1990, 1, 1))
-                .build();
-        User user2 = User.builder()
-                .email("user2@mail.ru")
-                .login("user2")
-                .name("User Two")
-                .birthday(LocalDate.of(1991, 2, 2))
-                .build();
+        User user1 = new User("user1@mail.ru", "user1", "User One", LocalDate.of(1990, 1, 1));
+        User user2 = new User("user2@mail.ru", "user2", "User Two", LocalDate.of(1991, 2, 2));
 
         userStorage.add(user1);
         userStorage.add(user2);
@@ -81,37 +61,22 @@ class UserDbStorageTest {
 
     @Test
     void testUpdateUser() {
-        User user = User.builder()
-                .email("update@mail.ru")
-                .login("updateuser")
-                .name("Update User")
-                .birthday(LocalDate.of(1990, 1, 1))
-                .build();
+        User user = new User("update@mail.ru", "updateuser", "Update User", LocalDate.of(1990, 1, 1));
         User savedUser = userStorage.add(user);
 
-        savedUser.setName("Updated Name");
-        userStorage.update(savedUser);
+        User updatedUser = new User(savedUser.getId(), "update@mail.ru", "updateuser", "Updated Name", LocalDate.of(1990, 1, 1));
+        userStorage.update(updatedUser);
 
-        Optional<User> updatedUser = userStorage.findById(savedUser.getId());
-        assertThat(updatedUser)
+        Optional<User> result = userStorage.findById(savedUser.getId());
+        assertThat(result)
                 .isPresent()
                 .hasValueSatisfying(u -> assertThat(u.getName()).isEqualTo("Updated Name"));
     }
 
     @Test
     void testAddAndRemoveFriend() {
-        User user1 = User.builder()
-                .email("friend1@mail.ru")
-                .login("friend1")
-                .name("Friend One")
-                .birthday(LocalDate.of(1990, 1, 1))
-                .build();
-        User user2 = User.builder()
-                .email("friend2@mail.ru")
-                .login("friend2")
-                .name("Friend Two")
-                .birthday(LocalDate.of(1991, 2, 2))
-                .build();
+        User user1 = new User("friend1@mail.ru", "friend1", "Friend One", LocalDate.of(1990, 1, 1));
+        User user2 = new User("friend2@mail.ru", "friend2", "Friend Two", LocalDate.of(1991, 2, 2));
 
         userStorage.add(user1);
         userStorage.add(user2);
@@ -128,24 +93,9 @@ class UserDbStorageTest {
 
     @Test
     void testGetCommonFriends() {
-        User user1 = User.builder()
-                .email("common1@mail.ru")
-                .login("common1")
-                .name("Common One")
-                .birthday(LocalDate.of(1990, 1, 1))
-                .build();
-        User user2 = User.builder()
-                .email("common2@mail.ru")
-                .login("common2")
-                .name("Common Two")
-                .birthday(LocalDate.of(1991, 2, 2))
-                .build();
-        User user3 = User.builder()
-                .email("common3@mail.ru")
-                .login("common3")
-                .name("Common Three")
-                .birthday(LocalDate.of(1992, 3, 3))
-                .build();
+        User user1 = new User("common1@mail.ru", "common1", "Common One", LocalDate.of(1990, 1, 1));
+        User user2 = new User("common2@mail.ru", "common2", "Common Two", LocalDate.of(1991, 2, 2));
+        User user3 = new User("common3@mail.ru", "common3", "Common Three", LocalDate.of(1992, 3, 3));
 
         userStorage.add(user1);
         userStorage.add(user2);

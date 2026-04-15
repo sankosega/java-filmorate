@@ -6,7 +6,10 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.film.FilmDbStorage;
+import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
+import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
 
 import java.util.Collection;
 import java.util.List;
@@ -17,9 +20,25 @@ import java.util.List;
 public class FilmService {
     private final FilmDbStorage filmStorage;
     private final UserService userService;
+    private final MpaStorage mpaStorage;
+    private final GenreStorage genreStorage;
 
     public Film create(Film film) {
+        validateMpaAndGenres(film);
         return filmStorage.add(film);
+    }
+
+    private void validateMpaAndGenres(Film film) {
+        if (film.getMpa() != null) {
+            mpaStorage.findById(film.getMpa().getId())
+                    .orElseThrow(() -> new NotFoundException("MPA с id=" + film.getMpa().getId() + " не найден"));
+        }
+        if (film.getGenres() != null) {
+            for (Genre genre : film.getGenres()) {
+                genreStorage.findById(genre.getId())
+                        .orElseThrow(() -> new NotFoundException("Жанр с id=" + genre.getId() + " не найден"));
+            }
+        }
     }
 
     public Film update(Film film) {
@@ -27,6 +46,7 @@ public class FilmService {
             throw new ValidationException("Id должен быть указан");
         }
         getById(film.getId());
+        validateMpaAndGenres(film);
         return filmStorage.update(film);
     }
 

@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -34,6 +35,26 @@ public class ErrorHandler {
                 .orElse("Ошибка валидации");
         log.warn("Ошибка валидации: {}", message);
         return new ErrorResponse(message);
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleIllegalArgumentException(IllegalArgumentException e) {
+        log.warn("Ошибка валидации: {}", e.getMessage());
+        return new ErrorResponse(e.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleHttpMessageNotReadable(HttpMessageNotReadableException e) {
+        Throwable cause = e.getCause();
+        if (cause != null && cause.getCause() instanceof IllegalArgumentException) {
+            String message = cause.getCause().getMessage();
+            log.warn("Ошибка валидации: {}", message);
+            return new ErrorResponse(message);
+        }
+        log.warn("Ошибка чтения запроса: {}", e.getMessage());
+        return new ErrorResponse("Некорректный формат запроса");
     }
 
     @ExceptionHandler

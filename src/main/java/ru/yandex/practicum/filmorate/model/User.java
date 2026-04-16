@@ -1,5 +1,7 @@
 package ru.yandex.practicum.filmorate.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PastOrPresent;
@@ -9,8 +11,6 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * User.
@@ -34,20 +34,23 @@ public class User {
     @PastOrPresent(message = "Дата рождения не может быть в будущем")
     private final LocalDate birthday;
 
-    private final Set<Long> friends = new HashSet<>();
-
-    public User(String email, String login, String name, LocalDate birthday) {
+    @JsonCreator
+    public User(@JsonProperty("id") Long id,
+                @JsonProperty("email") String email,
+                @JsonProperty("login") String login,
+                @JsonProperty("name") String name,
+                @JsonProperty("birthday") LocalDate birthday) {
+        if (login != null && login.contains(" ")) {
+            throw new IllegalArgumentException("Логин не может содержать пробелы");
+        }
+        this.id = id;
         this.email = email;
         this.login = login;
         this.name = (name == null || name.isBlank()) ? login : name;
         this.birthday = birthday;
     }
 
-    public void addFriend(Long friendId) {
-        friends.add(friendId);
-    }
-
-    public void removeFriend(Long friendId) {
-        friends.remove(friendId);
+    public User(String email, String login, String name, LocalDate birthday) {
+        this(null, email, login, name, birthday);
     }
 }

@@ -6,23 +6,43 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.user.UserStorage;
+import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
+import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
 
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class FilmService {
     private final FilmStorage filmStorage;
-    private final UserStorage userStorage;
+    private final UserService userService;
+    private final MpaStorage mpaStorage;
+    private final GenreStorage genreStorage;
 
     public Film create(Film film) {
+        validateMpa(film);
+        validateGenres(film);
         return filmStorage.add(film);
+    }
+
+    private void validateMpa(Film film) {
+        if (film.getMpa() != null) {
+            mpaStorage.findById(film.getMpa().getId())
+                    .orElseThrow(() -> new NotFoundException("MPA с id=" + film.getMpa().getId() + " не найден"));
+        }
+    }
+
+    private void validateGenres(Film film) {
+        if (film.getGenres() != null) {
+            for (Genre genre : film.getGenres()) {
+                genreStorage.findById(genre.getId())
+                        .orElseThrow(() -> new NotFoundException("Жанр с id=" + genre.getId() + " не найден"));
+            }
+        }
     }
 
     public Film update(Film film) {
@@ -30,6 +50,8 @@ public class FilmService {
             throw new ValidationException("Id должен быть указан");
         }
         getById(film.getId());
+        validateMpa(film);
+        validateGenres(film);
         return filmStorage.update(film);
     }
 
@@ -43,27 +65,20 @@ public class FilmService {
     }
 
     public void addLike(Long filmId, Long userId) {
-        Film film = getById(filmId);
-        userStorage.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + userId + " не найден"));
-
-        film.addLike(userId);
+        getById(filmId);
+        userService.getById(userId);
+        filmStorage.addLike(filmId, userId);
         log.info("Пользователь {} поставил лайк фильму {}", userId, filmId);
     }
 
     public void removeLike(Long filmId, Long userId) {
-        Film film = getById(filmId);
-        userStorage.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + userId + " не найден"));
-
-        film.removeLike(userId);
+        getById(filmId);
+        userService.getById(userId);
+        filmStorage.removeLike(filmId, userId);
         log.info("Пользователь {} убрал лайк с фильма {}", userId, filmId);
     }
 
     public List<Film> getPopular(int count) {
-        return filmStorage.findAll().stream()
-                .sorted(Comparator.comparingInt(Film::getLikesCount).reversed())
-                .limit(count)
-                .collect(Collectors.toList());
+        return filmStorage.getPopular(count);
     }
 }

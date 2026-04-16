@@ -10,7 +10,6 @@ import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -19,7 +18,6 @@ public class UserService {
     private final UserStorage userStorage;
 
     public User create(User user) {
-        validate(user);
         return userStorage.add(user);
     }
 
@@ -28,7 +26,6 @@ public class UserService {
             throw new ValidationException("Id должен быть указан");
         }
         getById(user.getId());
-        validate(user);
         return userStorage.update(user);
     }
 
@@ -42,46 +39,28 @@ public class UserService {
     }
 
     public void addFriend(Long userId, Long friendId) {
-        User user = getById(userId);
-        User friend = getById(friendId);
-
-        user.addFriend(friendId);
-        friend.addFriend(userId);
-
-        log.info("Пользователи {} и {} теперь друзья", userId, friendId);
+        getById(userId);
+        getById(friendId);
+        userStorage.addFriend(userId, friendId);
+        log.info("Пользователь {} добавил в друзья {}", userId, friendId);
     }
 
     public void removeFriend(Long userId, Long friendId) {
-        User user = getById(userId);
-        User friend = getById(friendId);
-
-        user.removeFriend(friendId);
-        friend.removeFriend(userId);
-
-        log.info("Пользователи {} и {} больше не друзья", userId, friendId);
+        getById(userId);
+        getById(friendId);
+        userStorage.removeFriend(userId, friendId);
+        log.info("Пользователь {} удалил из друзей {}", userId, friendId);
     }
 
     public List<User> getFriends(Long userId) {
-        User user = getById(userId);
-        return user.getFriends().stream()
-                .map(this::getById)
-                .collect(Collectors.toList());
+        getById(userId);
+        return userStorage.getFriends(userId);
     }
 
     public List<User> getCommonFriends(Long userId, Long otherId) {
-        User user = getById(userId);
-        User other = getById(otherId);
-
-        return user.getFriends().stream()
-                .filter(other.getFriends()::contains)
-                .map(this::getById)
-                .collect(Collectors.toList());
+        getById(userId);
+        getById(otherId);
+        return userStorage.getCommonFriends(userId, otherId);
     }
 
-    private void validate(User user) {
-        if (user.getLogin() != null && user.getLogin().contains(" ")) {
-            log.warn("Логин содержит пробелы: {}", user.getLogin());
-            throw new ValidationException("Логин не может содержать пробелы");
-        }
-    }
 }

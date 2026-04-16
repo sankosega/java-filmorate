@@ -89,16 +89,19 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
+    @Override
     public void addLike(Long filmId, Long userId) {
         String sql = "INSERT INTO likes (film_id, user_id) VALUES (?, ?)";
         jdbcTemplate.update(sql, filmId, userId);
     }
 
+    @Override
     public void removeLike(Long filmId, Long userId) {
         String sql = "DELETE FROM likes WHERE film_id = ? AND user_id = ?";
         jdbcTemplate.update(sql, filmId, userId);
     }
 
+    @Override
     public List<Film> getPopular(int count) {
         String sql = "SELECT f.*, m.name AS mpa_name, COUNT(l.user_id) AS likes_count " +
                 "FROM films f " +

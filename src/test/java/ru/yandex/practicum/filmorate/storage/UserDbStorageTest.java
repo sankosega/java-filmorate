@@ -108,4 +108,16 @@ class UserDbStorageTest {
         assertThat(commonFriends).hasSize(1);
         assertThat(commonFriends.get(0).getId()).isEqualTo(user3.getId());
     }
+
+    @Test
+    void testDeleteUser() {
+        User user = new User("delete@mail.ru", "deleteuser", "Delete User", LocalDate.of(1990, 1, 1));
+        User savedUser = userStorage.add(user);
+
+        assertThat(userStorage.findById(savedUser.getId())).isPresent();
+
+        userStorage.delete(savedUser.getId());
+
+        assertThat(userStorage.findById(savedUser.getId())).isEmpty();
+    }
 }

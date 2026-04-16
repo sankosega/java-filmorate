@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.user.UserDbStorage;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
 import java.util.List;
@@ -15,10 +15,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-    private final UserDbStorage userStorage;
+    private final UserStorage userStorage;
 
     public User create(User user) {
-        validateLogin(user);
         return userStorage.add(user);
     }
 
@@ -27,7 +26,6 @@ public class UserService {
             throw new ValidationException("Id должен быть указан");
         }
         getById(user.getId());
-        validateLogin(user);
         return userStorage.update(user);
     }
 
@@ -65,10 +63,4 @@ public class UserService {
         return userStorage.getCommonFriends(userId, otherId);
     }
 
-    private void validateLogin(User user) {
-        if (user.getLogin() != null && user.getLogin().contains(" ")) {
-            log.warn("Логин содержит пробелы: {}", user.getLogin());
-            throw new ValidationException("Логин не может содержать пробелы");
-        }
-    }
 }

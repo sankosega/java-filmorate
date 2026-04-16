@@ -130,4 +130,16 @@ class FilmDbStorageTest {
         assertThat(popular).isNotEmpty();
         assertThat(popular.get(0).getName()).isEqualTo("Popular Film 2");
     }
+
+    @Test
+    void testDeleteFilm() {
+        Film film = new Film("Delete Film", "Delete Description", LocalDate.of(2000, 1, 1), 100, new Mpa(1, "G"));
+        Film savedFilm = filmStorage.add(film);
+
+        assertThat(filmStorage.findById(savedFilm.getId())).isPresent();
+
+        filmStorage.delete(savedFilm.getId());
+
+        assertThat(filmStorage.findById(savedFilm.getId())).isEmpty();
+    }
 }

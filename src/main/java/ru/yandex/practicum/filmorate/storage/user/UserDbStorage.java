@@ -76,16 +76,19 @@ public class UserDbStorage implements UserStorage {
         return jdbcTemplate.query(sql, this::mapRowToUser);
     }
 
+    @Override
     public void addFriend(Long userId, Long friendId) {
         String sql = "INSERT INTO friendships (user_id, friend_id) VALUES (?, ?)";
         jdbcTemplate.update(sql, userId, friendId);
     }
 
+    @Override
     public void removeFriend(Long userId, Long friendId) {
         String sql = "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?";
         jdbcTemplate.update(sql, userId, friendId);
     }
 
+    @Override
     public List<User> getFriends(Long userId) {
         String sql = "SELECT u.* FROM users u " +
                 "JOIN friendships f ON u.id = f.friend_id " +
@@ -93,6 +96,7 @@ public class UserDbStorage implements UserStorage {
         return jdbcTemplate.query(sql, this::mapRowToUser, userId);
     }
 
+    @Override
     public List<User> getCommonFriends(Long userId, Long otherId) {
         String sql = "SELECT u.* FROM users u " +
                 "JOIN friendships f1 ON u.id = f1.friend_id " +

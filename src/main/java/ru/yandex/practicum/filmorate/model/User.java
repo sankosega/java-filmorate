@@ -40,6 +40,9 @@ public class User {
                 @JsonProperty("login") String login,
                 @JsonProperty("name") String name,
                 @JsonProperty("birthday") LocalDate birthday) {
+        if (login != null && login.contains(" ")) {
+            throw new IllegalArgumentException("Логин не может содержать пробелы");
+        }
         this.id = id;
         this.email = email;
         this.login = login;
